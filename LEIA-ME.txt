@@ -1,0 +1,15 @@
+KOSOVO — versão instalável no iPhone (PWA)
+
+COMO INSTALAR NO IPHONE
+1. Publique esta pasta em um endereço HTTPS (por exemplo, GitHub Pages, Netlify ou outro host).
+2. Abra o endereço no Safari do iPhone.
+3. Toque em Compartilhar.
+4. Escolha "Adicionar à Tela de Início".
+5. Confirme "Adicionar".
+6. Abra o ícone KOSOVO na tela inicial.
+
+IMPORTANTE
+- Abrir um arquivo HTML diretamente pelo app Arquivos não transforma o jogo em um app instalado.
+- Para o botão "Adicionar à Tela de Início" funcionar como PWA, os arquivos precisam estar disponíveis por HTTPS.
+- O jogo atual ainda carrega o Three.js pela CDN, portanto a primeira execução precisa de internet.
+- Esta versão é um PWA. Para publicar na App Store, o projeto precisa ser empacotado como aplicativo iOS e passar pelo processo da Apple.
