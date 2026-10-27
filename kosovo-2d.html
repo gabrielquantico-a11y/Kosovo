@@ -2,14 +2,46 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>KOSOVO 2D</title>
-</head>
-<body style="background:#160d25;color:white;text-align:center;font-family:Arial">
-<h1>🎮 KOSOVO 2D</h1>
-<h2>🌙 A Floresta Macabra</h2>
-<p>Bolovo está chegando!</p>
-<p>Fase 1: fantasmas, zumbis e lobisomens.</p>
-<p>Fase 2: Halloween.</p>
-</body>
-</html>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#100b20;color:white;font-family:Arial;overflow:hidden;touch-action:none}canvas{width:100vw;height:100dvh;display:block}#hud{position:fixed;top:12px;left:12px;font-weight:bold;text-shadow:2px 2px black}#ctrl{position:fixed;bottom:20px;width:100%;display:flex;justify-content:space-between;padding:0 15px;pointer-events:none}.group{display:flex;gap:12px}button{pointer-events:auto;background:#57416f;color:white;border:2px solid #c6a5f1;border-radius:16px;padding:15px 22px;font-size:23px;font-weight:bold;touch-action:none}#jump{background:#8355a3}#msg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#080615bb;text-align:center;padding:25px}#panel{background:#30213d;border:2px solid #b28dd4;border-radius:20px;padding:25px;max-width:400px}#panel p{line-height:1.5}
+</style></head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud">KOSOVO 2D | Fase <span id="fase">1</span> | Almas <span id="points">0</span>/5 | ♥ <span id="hp">3</span></div>
+<div id="ctrl"><div class="group"><button data-k="l">◀</button><button data-k="r">▶</button></div><button id="jump" data-k="j">PULAR</button></div>
+<div id="msg"><div id="panel"><h1>🌙 KOSOVO 2D</h1><p>Fase 1: Floresta Macabra, com fantasmas, zumbis e lobisomens.<br>Fase 2: Halloween, com abóboras e morcegos.<br>Colete cinco almas e entre no portal!</p><button id="start">JOGAR</button></div></div>
+<script>
+const c=document.getElementById('c'),g=c.getContext('2d'),keys={l:0,r:0,j:0};
+let w=800,h=450,s=1,cam=0,phase=1,playing=false,t=0,score=0,hp=3,inv=0;
+const p={x:40,y:200,vx:0,vy:0,w:34,h:53,ground:false,face:1};
+let gems=[],enemies=[];
+function resize(){c.width=innerWidth*devicePixelRatio;c.height=innerHeight*devicePixelRatio;w=innerWidth;h=innerHeight;s=Math.min(w/800,h/450);s=Math.max(.5,s)}addEventListener('resize',resize);resize();
+function level(n){phase=n;score=0;hp=3;cam=0;p.x=40;p.y=200;p.vx=0;p.vy=0;inv=0;gems=[350,700,1080,1450,1830].map((x,i)=>({x,y:i%2?270:310,got:false}));enemies=[{x:480,base:480,type:0},{x:890,base:890,type:1},{x:1300,base:1300,type:2},{x:1730,base:1730,type:n===1?2:1}];document.getElementById('fase').textContent=n;hud()}
+function hud(){document.getElementById('points').textContent=score;document.getElementById('hp').textContent=hp}
+function msg(title,body,button){playing=false;document.getElementById('msg').style.display='flex';document.querySelector('#panel h1').textContent=title;document.querySelector('#panel p').innerHTML=body;document.getElementById('start').textContent=button}
+document.getElementById('start').onclick=()=>{if(phase===0)level(1);playing=true;document.getElementById('msg').style.display='none'};
+document.querySelectorAll('[data-k]').forEach(b=>{const k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);keys[k]=1});for(const ev of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(ev,()=>keys[k]=0)});
+const km={ArrowLeft:'l',KeyA:'l',ArrowRight:'r',KeyD:'r',Space:'j',ArrowUp:'j'};
+addEventListener('keydown',e=>{if(km[e.code]){e.preventDefault();keys[km[e.code]]=1}});addEventListener('keyup',e=>{if(km[e.code])keys[km[e.code]]=0});addEventListener('blur',()=>{keys.l=keys.r=keys.j=0});
+function hurt(){if(inv>0)return;hp--;inv=1.4;hud();p.x=Math.max(40,p.x-160);p.y=200;p.vy=0;if(hp<=0){level(phase);msg('💀 Fim de jogo','Bolovo foi derrotado! Tente novamente.','RECOMEÇAR')}}
+function update(dt){t+=dt;if(!playing)return;inv=Math.max(0,inv-dt);let dir=keys.r-keys.l;p.vx=dir*235;if(dir)p.face=dir;if(keys.j&&p.ground){p.vy=-530;p.ground=false}p.vy+=1300*dt;p.x=Math.max(0,Math.min(2080,p.x+p.vx*dt));let old=p.y+p.h;p.y+=p.vy*dt;p.ground=false;
+const platforms=[{x:0,y:385,w:2100},{x:260,y:310,w:130},{x:610,y:310,w:140},{x:1010,y:310,w:140},{x:1400,y:310,w:140},{x:1780,y:310,w:140}];
+for(let a of platforms)if(p.vy>=0&&p.x+p.w>a.x+4&&p.x<a.x+a.w-4&&old<=a.y+9&&p.y+p.h>=a.y){p.y=a.y-p.h;p.vy=0;p.ground=true}
+for(let q of gems)if(!q.got&&Math.hypot(p.x+17-q.x,p.y+20-q.y)<35){q.got=true;score++;hud()}
+enemies.forEach((e,i)=>{e.x=e.base+Math.sin(t*(1.1+i*.2)+i)*65;if(Math.abs(p.x+17-e.x)<30&&Math.abs(p.y+27-355)<38)hurt()});
+if(p.x>2040&&score===5){if(phase===1){level(2);msg('🎃 FASE 2 — HALLOWEEN','Bolovo escapou da floresta! Agora enfrente a noite de Halloween.','CONTINUAR')}else{phase=0;msg('🏆 BOL OVO VENCEU!','Você completou as duas fases do KOSOVO 2D!','JOGAR NOVAMENTE')}}
+cam=Math.max(0,Math.min(1300,p.x-250))}
+function circle(x,y,r,col){g.fillStyle=col;g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fill()}
+function draw(){g.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);g.fillStyle=phase===2?'#311627':'#17112e';g.fillRect(0,0,w,h);g.save();g.translate((w-800*s)/2,(h-450*s)/2);g.scale(s,s);circle(650,85,45,phase===2?'#ffad50':'#c9c1dd');g.save();g.translate(-cam*.3,0);for(let i=0;i<20;i++){let x=i*150;g.strokeStyle=phase===2?'#241320':'#231c32';g.lineWidth=13;g.beginPath();g.moveTo(x,385);g.lineTo(x+8,165);g.lineTo(x-30,215);g.moveTo(x+8,245);g.lineTo(x+50,195);g.stroke()}g.restore();g.translate(-cam,0);
+g.fillStyle=phase===2?'#49313b':'#302b3a';g.fillRect(0,385,2120,65);
+for(let x of [260,610,1010,1400,1780]){g.fillStyle='#66526c';g.fillRect(x,310,135,12)}
+for(let q of gems)if(!q.got){circle(q.x,q.y+Math.sin(t*3)*6,12,'#a7ffda');circle(q.x,q.y+Math.sin(t*3)*6,5,'#fff')}
+enemies.forEach(e=>{let y=352;if(e.type===0){circle(e.x,y-7,20,'#c5c4e5');g.fillStyle='#c5c4e5';g.fillRect(e.x-20,y-7,40,28)}else if(e.type===1){g.fillStyle='#73956c';g.fillRect(e.x-17,y-18,34,40);circle(e.x,y-23,17,'#73956c')}else{g.fillStyle='#78606c';g.beginPath();g.moveTo(e.x-20,y+20);g.lineTo(e.x-15,y-25);g.lineTo(e.x-7,y-40);g.lineTo(e.x,y-25);g.lineTo(e.x+10,y-40);g.lineTo(e.x+19,y+20);g.fill()}circle(e.x-7,y-12,3,'#f24756');circle(e.x+7,y-12,3,'#f24756')});
+if(phase===2)for(let x=160;x<2080;x+=260){circle(x,367,16,'#ed8b36');g.fillStyle='#24121b';g.fillRect(x-8,363,5,5);g.fillRect(x+4,363,5,5)}
+g.strokeStyle='#bc8bff';g.lineWidth=10;g.beginPath();g.ellipse(2070,330,26,52,0,0,Math.PI*2);g.stroke();
+if(inv<=0||Math.floor(t*12)%2===0){g.save();g.translate(p.x+17,p.y+26);g.scale(p.face,1);g.strokeStyle='#a58b70';g.lineWidth=7;g.lineCap='round';g.beginPath();g.moveTo(-8,18);g.lineTo(-10,29);g.moveTo(8,18);g.lineTo(10,29);g.moveTo(-16,-3);g.lineTo(-25,9);g.moveTo(16,-3);g.lineTo(25,9);g.stroke();circle(-25,9,7,'white');circle(25,9,7,'white');g.fillStyle='white';g.fillRect(-19,27,17,7);g.fillRect(4,27,17,7);g.fillStyle='#a78360';g.beginPath();g.ellipse(0,0,20,27,0,0,7);g.fill();for(let i=0;i<130;i++){let a=i*2.4,r=Math.sqrt(i/130);let x=Math.cos(a)*19*r,y=Math.sin(a)*26*r;g.strokeStyle=i%3?'#b99670':'#63442f';g.lineWidth=2;g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a)*6,y+Math.sin(a)*6);g.stroke()}g.strokeStyle='#16121b';g.lineWidth=3;g.beginPath();g.arc(-8,-6,7,0,7);g.arc(8,-6,7,0,7);g.moveTo(-1,-6);g.lineTo(1,-6);g.stroke();circle(-7,-6,2,'black');circle(9,-6,2,'black');g.restore()}
+g.restore()}
+let last=0;function frame(ms){let dt=Math.min((ms-last)/1000||0,.032);last=ms;update(dt);draw();requestAnimationFrame(frame)}level(1);requestAnimationFrame(frame);
+</script></body></html>
